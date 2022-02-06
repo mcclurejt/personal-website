@@ -3,11 +3,12 @@ import { Header, Body } from "../components/Text";
 
 const GalleryContainer = styled.div`
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
-  align-items: center;
   overflow-x: auto;
+  overflow-y: auto;
   background-color: ${(props) => props.theme.colors.background};
 `;
 

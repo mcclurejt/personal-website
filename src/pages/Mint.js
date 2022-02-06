@@ -194,9 +194,6 @@ const Mint = () => {
       {ethersState.isConnected &&
         ethersState.isCorrectChain &&
         renderCollectionBar()}
-      {ethersState.isConnected &&
-        ethersState.isCorrectChain &&
-        renderMintedOtters(mintedOtters)}
       {ethersState.isConnected && ethersState.isCorrectChain && (
         <MintButton
           onClick={isMinting ? null : mintOtter}
@@ -207,6 +204,9 @@ const Mint = () => {
           {isMinting ? "Minting..." : "Mint"}
         </MintButton>
       )}
+      {ethersState.isConnected &&
+        ethersState.isCorrectChain &&
+        renderMintedOtters(mintedOtters)}
     </MintContainer>
   );
 };
