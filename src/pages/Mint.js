@@ -26,7 +26,7 @@ const Mint = () => {
         try {
           await connect();
         } catch (error) {
-          console.log(error);
+          console.warn(error);
         }
       })();
     } else if (ethersState.isConnected) {
@@ -53,17 +53,12 @@ const Mint = () => {
           OtterNFT.abi,
           signer
         );
-        console.log("opening wallet to mint otter");
         let nftTxn = await connectedContract.makeAnOtterNFT();
         setIsMinting(true);
-        console.log("minting otter...");
         await nftTxn.wait();
         setIsMinting(false);
-        console.log(
-          `finished minting https://rinkeby.etherscan.io/tx/${nftTxn.hash}`
-        );
       } else {
-        console.log("Ethereum object doesn't exist!");
+        console.warn("Ethereum object doesn't exist!");
       }
     } catch (error) {
       console.log(error);
@@ -83,21 +78,16 @@ const Mint = () => {
           signer
         );
         connectedContract.on("NewOtterMinted", async (from, tokenId) => {
-          console.log("New Otter Minted!!!", Number(tokenId));
           const uri = await connectedContract.tokenURI(Number(tokenId));
           const json = atob(uri.substring(29));
           const data = JSON.parse(json);
-          console.log({
-            ...mintedOttersRef.current,
-            [Number(tokenId)]: data,
-          });
           setMintedOtters({
             ...mintedOttersRef.current,
             [Number(tokenId)]: data,
           });
         });
       } else {
-        console.log("Ethereum object doesn't exist!");
+        console.warn("Ethereum object doesn't exist!");
       }
     } catch (error) {
       console.log(error);
@@ -116,7 +106,7 @@ const Mint = () => {
         );
         connectedContract.removeAllListeners(["NewOtterMinted"]);
       } else {
-        console.log("Ethereum object doesn't exist");
+        console.warn("Ethereum object doesn't exist");
       }
     } catch (error) {
       console.warn(error);

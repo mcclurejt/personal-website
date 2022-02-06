@@ -54,7 +54,6 @@ const useEthers = ({ desiredChainId } = { desiredChainId: "4" }) => {
     });
     // get current chain
     const chainId = await getChain();
-    console.log("iscorrect", chainId === desiredChainId);
     dispatch({
       type: "SET_IS_CORRECT_CHAIN",
       payload: chainId === desiredChainId,
@@ -65,7 +64,6 @@ const useEthers = ({ desiredChainId } = { desiredChainId: "4" }) => {
     }
     // reload page on chain changed
     ethereum.on("chainChanged", (netId) => {
-      console.log("network change, reloading page");
       if (netId) {
         window.location.reload();
       }
@@ -83,7 +81,6 @@ const useEthers = ({ desiredChainId } = { desiredChainId: "4" }) => {
   const getAccount = async () => {
     if (!ethereum) throw Error("wallet is not available");
     const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-    console.log("getAccount", accounts);
     if (!accounts.length) throw Error("no accounts available");
     const ens = await provider.lookupAddress(accounts[0]);
     dispatch({
@@ -97,7 +94,6 @@ const useEthers = ({ desiredChainId } = { desiredChainId: "4" }) => {
   const getChain = async () => {
     if (!ethereum) throw Error("wallet is not available.");
     const chainId = await ethereum.request({ method: "net_version" });
-    console.log("getChain", chainId);
     dispatch({
       type: "SET_CHAIN",
       payload: { id: chainId, name: chains(chainId) },

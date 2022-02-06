@@ -22,7 +22,7 @@ const GalleryItem = styled.div`
 const GalleryItemName = styled(Header)`
   margin: 0 auto;
   color: ${(props) => props.color};
-  -webkit-text-stroke: 2px ${(props) => props.theme.colors.foreground};
+  -webkit-text-stroke: 1px ${(props) => props.theme.colors.foreground};
 `;
 
 const GalleryItemImage = styled.img`
@@ -43,7 +43,7 @@ export const Gallery = (items) => (
   <GalleryContainer>
     {items.map((item) => (
       <GalleryItem key={item.name}>
-        <GalleryItemName medium color={item.properties["background"]}>
+        <GalleryItemName small color={item.properties["background"]}>
           {item.name}
         </GalleryItemName>
         <GalleryItemImage src={item.src} />
