@@ -1,6 +1,5 @@
-import React from "react";
-import styled from "styled-components";
-import { ThemeProvider } from "styled-components";
+import React, { useState } from "react";
+import styled, { ThemeProvider } from "styled-components";
 import { LightTheme } from "./components/Theme";
 import Home from "./pages/Home";
 import { Bar, BarSVG, BarItems, NavLink } from "./components/Bar";
@@ -10,7 +9,7 @@ import DiscordSVG from "./svg/discord.svg";
 import LinkedInSVG from "./svg/linkedin.svg";
 import { Routes, Route } from "react-router-dom";
 import Mint from "./pages/Mint";
-import { EthersStateProvider } from "./hooks/useEthers";
+import { EthereumStateProvider } from "./providers/ethereum";
 
 const AppContainer = styled.div`
   margin: 0;
@@ -23,6 +22,7 @@ const AppContainer = styled.div`
 `;
 
 function App() {
+  const [centerContent, setCenterContent] = useState(null);
   const left = (
     <BarItems left>
       <NavLink to="/"> / </NavLink>
@@ -56,15 +56,18 @@ function App() {
   return (
     <ThemeProvider theme={LightTheme}>
       <AppContainer>
-        <Bar left={left} right={right} name={""} />
+        <Bar left={left} right={right} center={centerContent} />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route
+            path="/"
+            element={<Home setCenterContent={setCenterContent} />}
+          />
           <Route
             path="/mint"
             element={
-              <EthersStateProvider>
-                <Mint />
-              </EthersStateProvider>
+              <EthereumStateProvider>
+                <Mint setCenterContent={setCenterContent} />
+              </EthereumStateProvider>
             }
           />
         </Routes>

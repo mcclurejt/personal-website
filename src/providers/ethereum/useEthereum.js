@@ -1,8 +1,8 @@
-import { useContext, useEffect, useState, useRef } from "react";
-import { EthersStateContext, EthersDispatchContext } from "./store";
 import { ethers } from "ethers";
+import { useContext, useEffect, useState, useRef } from "react";
+import { EthereumStateContext, EthereumDispatchContext } from "./store";
 
-const chains = (chainId) => {
+const getChainName = (chainId) => {
   if (!!Number(chainId) && chainId.length > 9) {
     return "local";
   }
@@ -22,13 +22,12 @@ const chains = (chainId) => {
   }
 };
 
-const useEthers = ({ desiredChainId } = { desiredChainId: "4" }) => {
-  const state = useContext(EthersStateContext);
-  const dispatch = useContext(EthersDispatchContext);
+const useEthereum = () => {
+  const state = useContext(EthereumStateContext);
+  const dispatch = useContext(EthereumDispatchContext);
   const _isMounted = useRef(true);
   const _isConnectCalled = useRef(false);
   const [ethereum] = useState(window.ethereum);
-  const provider = new ethers.providers.Web3Provider(ethereum);
 
   useEffect(() => {
     return () => {
@@ -37,31 +36,16 @@ const useEthers = ({ desiredChainId } = { desiredChainId: "4" }) => {
   }, []);
 
   const connect = async () => {
-    console.log("connecting...");
     if (!ethereum) throw Error("wallet is not available.");
     if (!_isMounted.current) throw Error("component is not mounted.");
     if (_isConnectCalled.current) throw Error("connect method already called.");
     _isConnectCalled.current = true;
     // set up the provider
+    const provider = new ethers.providers.Web3Provider(ethereum);
     dispatch({ type: "SET_PROVIDER", payload: provider });
-    // set up desired chain
-    dispatch({
-      type: "SET_DESIRED_CHAIN",
-      payload: {
-        id: desiredChainId,
-        name: chains(desiredChainId),
-      },
-    });
-    // get current chain
-    const chainId = await getChain();
-    dispatch({
-      type: "SET_IS_CORRECT_CHAIN",
-      payload: chainId === desiredChainId,
-    });
-    // only load accounts if on correct chain
-    if (chainId === desiredChainId) {
-      await getAccount();
-    }
+    // get chain and accounts
+    await getChain();
+    await getAccount();
     // reload page on chain changed
     ethereum.on("chainChanged", (netId) => {
       if (netId) {
@@ -78,42 +62,49 @@ const useEthers = ({ desiredChainId } = { desiredChainId: "4" }) => {
     _isConnectCalled.current = false;
   };
 
+  const getChain = async () => {
+    if (!ethereum) throw Error("wallet is not available.");
+    const chainId = await ethereum.request({ method: "net_version" });
+    const chain = { id: chainId, name: getChainName(chainId) };
+    dispatch({
+      type: "SET_CHAIN",
+      payload: chain,
+    });
+    return chain;
+  };
+
   const getAccount = async () => {
     if (!ethereum) throw Error("wallet is not available");
     const accounts = await ethereum.request({ method: "eth_requestAccounts" });
     if (!accounts.length) throw Error("no accounts available");
-    const ens = await provider.lookupAddress(accounts[0]);
-    dispatch({
-      type: "SET_ACCOUNT",
-      payload: { address: accounts[0], ens },
-    });
-    dispatch({ type: "SET_CONNECTED", payload: true });
-    return accounts[0];
+    try {
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const ens = await provider.lookupAddress(accounts[0]);
+      const account = { address: accounts[0], ens };
+      dispatch({
+        type: "SET_ACCOUNT",
+        payload: account,
+      });
+      dispatch({ type: "SET_CONNECTED", payload: true });
+      return account;
+    } catch (error) {
+      console.warn(error);
+    }
   };
 
-  const getChain = async () => {
-    if (!ethereum) throw Error("wallet is not available.");
-    const chainId = await ethereum.request({ method: "net_version" });
-    dispatch({
-      type: "SET_CHAIN",
-      payload: { id: chainId, name: chains(chainId) },
-    });
-    return chainId;
-  };
-
-  const switchChain = async () => {
+  const switchChain = async (chainId) => {
     if (!ethereum) throw Error("wallet is not available.");
     await ethereum.request({
       method: "wallet_switchEthereumChain",
-      params: [{ chainId: "0x" + Number(desiredChainId).toString(16) }],
+      params: [{ chainId: "0x" + Number(chainId).toString(16) }],
     });
   };
 
   return {
     connect,
     switchChain,
-    ethersState: { ...state, isAvailable: !!ethereum },
+    ethState: { ...state, isAvailable: !!ethereum },
   };
 };
 
-export default useEthers;
+export default useEthereum;

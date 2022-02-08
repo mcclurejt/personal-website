@@ -17,15 +17,28 @@ export const Button = styled.button`
       ? props.theme.body.size.large
       : props.theme.body.size.medium};
   font-weight: ${(props) => (props.bold ? "bold" : "regular")};
-  color: ${(props) => props.theme.colors.foreground};
-  background-color: ${(props) => props.theme.colors.background};
-  border: 3px solid ${(props) => props.theme.colors.foreground};
-  transition-property: background-color;
-  transition-property: color;
+  color: ${(props) =>
+    props.invert
+      ? props.theme.colors.background
+      : props.foreground || props.theme.colors.foreground};
+  background-color: ${(props) =>
+    props.invert
+      ? props.foreground || props.theme.colors.foreground
+      : props.theme.colors.background};
+  border: 3px solid
+    ${(props) => props.foreground || props.theme.colors.foreground};
+  transition-property: background-color, color, border;
   transition-duration: 0.25s;
+  transition-timing-function: ease-in-out;
   &:hover {
-    color: ${(props) => props.theme.colors.background};
-    background-color: ${(props) => props.theme.colors.foreground};
+    color: ${(props) =>
+      props.invert
+        ? props.foreground || props.theme.colors.foreground
+        : props.theme.colors.background};
+    background-color: ${(props) =>
+      props.invert
+        ? props.theme.colors.background
+        : props.foreground || props.theme.colors.foreground};
   }
 `;
 

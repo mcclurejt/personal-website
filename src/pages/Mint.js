@@ -1,27 +1,31 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
-import { ethers } from "ethers";
-import OtterNFT from "../utils/OtterNFT.json";
-import { useEthers } from "../hooks/useEthers";
+import { useEthereum } from "../providers/ethereum";
+import { useOtterNFT } from "../hooks/useOtterNFT";
 import { Header, Body } from "../components/Text";
 import { Button } from "../components/Button";
 import { Gallery } from "../components/Gallery";
 
+const DESIRED_CHAIN_ID = "4";
+const DESIRED_CHAIN_NAME = "rinkeby";
 const CONTRACT_ADDRESS = "0x4EDC0C642f4cb1A7dc118a7BFa9144602130cc37";
 
-const Mint = () => {
-  const { connect, switchChain, ethersState } = useEthers();
-  const [isMinting, setIsMinting] = useState(false);
-  const [mintedOtters, _setMintedOtters] = useState({});
-
-  const mintedOttersRef = useRef(mintedOtters);
-  const setMintedOtters = (otters) => {
-    mintedOttersRef.current = otters;
-    _setMintedOtters(otters);
-  };
+const Mint = ({ setCenterContent }) => {
+  const {
+    connect,
+    switchChain,
+    ethState: { isAvailable, isConnected, account, chain, provider },
+  } = useEthereum();
+  const { mintOtter, mintedOtters, isMinting } = useOtterNFT({
+    provider,
+    contractAddress: CONTRACT_ADDRESS,
+    isConnected,
+  });
+  const numMintedOtters = Object.keys(mintedOtters).length;
+  const isCorrectChain = chain.id === DESIRED_CHAIN_ID;
 
   useEffect(() => {
-    if (ethersState.isAvailable && !ethersState.isConnected) {
+    if (isAvailable && !isConnected) {
       (async () => {
         try {
           await connect();
@@ -29,99 +33,22 @@ const Mint = () => {
           console.warn(error);
         }
       })();
-    } else if (ethersState.isConnected) {
-      (async () => {
-        try {
-          await listenOtter();
-        } catch (error) {
-          console.warn(error);
-        }
-      })();
-      return unlistenOtter;
     }
-  }, [ethersState.isAvailable, ethersState.isConnected]);
+  }, [isAvailable, isConnected]);
 
-  /* Actions **/
-
-  const mintOtter = async () => {
-    try {
-      const { provider } = ethersState;
-      if (provider) {
-        const signer = provider.getSigner();
-        const connectedContract = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          OtterNFT.abi,
-          signer
-        );
-        let nftTxn = await connectedContract.makeAnOtterNFT();
-        setIsMinting(true);
-        await nftTxn.wait();
-        setIsMinting(false);
-      } else {
-        console.warn("Ethereum object doesn't exist!");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  /* Listeners **/
-
-  const listenOtter = async () => {
-    try {
-      const { provider } = ethersState;
-      if (provider) {
-        const signer = provider.getSigner();
-        const connectedContract = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          OtterNFT.abi,
-          signer
-        );
-        connectedContract.on("NewOtterMinted", async (from, tokenId) => {
-          const uri = await connectedContract.tokenURI(Number(tokenId));
-          const json = atob(uri.substring(29));
-          const data = JSON.parse(json);
-          setMintedOtters({
-            ...mintedOttersRef.current,
-            [Number(tokenId)]: data,
-          });
-        });
-      } else {
-        console.warn("Ethereum object doesn't exist!");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const unlistenOtter = async () => {
-    try {
-      const { provider } = ethersState;
-      if (provider) {
-        const signer = provider.getSigner();
-        const connectedContract = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          OtterNFT.abi,
-          signer
-        );
-        connectedContract.removeAllListeners(["NewOtterMinted"]);
-      } else {
-        console.warn("Ethereum object doesn't exist");
-      }
-    } catch (error) {
-      console.warn(error);
-    }
-  };
-
-  /* Render Methods **/
+  useEffect(() => {
+    setCenterContent(renderConnectionStatus());
+    return () => setCenterContent(null);
+  }, [isAvailable, isConnected, account]);
 
   const renderSwitchNetworkBanner = () =>
-    ethersState.chain.id !== ethersState.desiredChain.id && (
+    isAvailable &&
+    !isCorrectChain && (
       <SwitchNetworkBanner>
         <div style={{ flex: 1 }} />
         <SwitchNetworkText medium bold>
-          Error! Must be on {ethersState.desiredChain.name} network, currently
-          on {ethersState.chain.name}
+          Error! Must be on {DESIRED_CHAIN_NAME} network, currently on{" "}
+          {chain.name}
         </SwitchNetworkText>
         <div
           style={{
@@ -130,7 +57,12 @@ const Mint = () => {
             justifyContent: "flex-end",
           }}
         >
-          <Button bold medium onClick={switchChain}>
+          <Button
+            bold
+            medium
+            invert
+            onClick={() => switchChain(DESIRED_CHAIN_ID)}
+          >
             Switch Network
           </Button>
         </div>
@@ -143,20 +75,28 @@ const Mint = () => {
       <div style={{ display: "flex", flex: 1, justifyContent: "center" }}>
         <Collection large>Odd Otters</Collection>
       </div>
-      <div style={{ display: "flex", flex: 1, justifyContent: "flex-end" }}>
-        {renderConnectionStatus()}
+      <div style={{ display: "flex", flex: 1, justifyContent: "center" }}>
+        {numMintedOtters > 0 && (
+          <MintButton
+            onClick={isMinting ? null : mintOtter}
+            isMinting={isMinting}
+            bold
+            medium
+          >
+            {isMinting ? "Minting..." : "Mint"}
+          </MintButton>
+        )}
       </div>
     </CollectionBar>
   );
 
   const renderConnectionStatus = () => {
-    const { isAvailable, isConnected, account } = ethersState;
     const { ens, address } = account;
     const notAvailable = "MetaMask not found...";
     const notConnected = "Wallet not connected...";
     const hasENS = !!ens;
     return (
-      <ConnectionStatusText medium>
+      <ConnectionStatusText small>
         {!isAvailable && notAvailable}
         {isAvailable && !isConnected && notConnected}
         {isAvailable && isConnected && "Connected: "}
@@ -174,39 +114,35 @@ const Mint = () => {
     );
   };
 
-  const renderMintedOtters = () => {
-    const galleryItems = Object.keys(mintedOtters)
-      .sort((a, b) => a - b)
-      .reverse()
-      .map((id) => {
-        return {
+  const renderMintedOtters = () => (
+    <Gallery
+      items={Object.keys(mintedOtters)
+        .sort((a, b) => a - b)
+        .reverse()
+        .map((id) => ({
           name: mintedOtters[id].name,
           properties: mintedOtters[id].properties,
           src: mintedOtters[id].image,
-        };
-      });
-    return mintedOtters.length !== 0 && Gallery(galleryItems);
-  };
+        }))}
+    />
+  );
 
   return (
     <MintContainer>
       {renderSwitchNetworkBanner()}
-      {ethersState.isConnected &&
-        ethersState.isCorrectChain &&
-        renderCollectionBar()}
-      {ethersState.isConnected && ethersState.isCorrectChain && (
+      {isConnected && isCorrectChain && renderCollectionBar()}
+      {isConnected && isCorrectChain && numMintedOtters === 0 && (
         <MintButton
           onClick={isMinting ? null : mintOtter}
           isMinting={isMinting}
           bold
           medium
+          style={{ margin: "1em auto" }}
         >
           {isMinting ? "Minting..." : "Mint"}
         </MintButton>
       )}
-      {ethersState.isConnected &&
-        ethersState.isCorrectChain &&
-        renderMintedOtters(mintedOtters)}
+      {isConnected && isCorrectChain && renderMintedOtters(mintedOtters)}
     </MintContainer>
   );
 };
@@ -247,11 +183,12 @@ const CollectionBar = styled.div`
 const Collection = styled(Header)`
   margin: 0;
   height: 100%;
-  padding: 0 0.5em;
+  padding: 0.25em 0;
   border-radius: 0.5em;
   font-weight: bold;
   color: ${(props) => props.theme.colors.first};
   -webkit-text-stroke: 1px ${(props) => props.theme.colors.foreground};
+  white-space: nowrap;
 `;
 
 const ConnectionStatusText = styled(Body)`
@@ -261,26 +198,32 @@ const ConnectionStatusText = styled(Body)`
 
 const MintButton = styled(Button)`
   color: ${(props) =>
-    props.isMinting ? props.theme.colors.background : props.theme.colors.third};
-  margin: auto;
+    props.isMinting
+      ? props.theme.colors.background
+      : props.theme.colors.foreground};
   cursor: ${(props) => (props.isMinting ? "default" : "cursor")};
   background-color: ${(props) =>
-    props.isMinting ? props.theme.colors.foreground : "transparent"};
+    props.isMinting ? props.theme.colors.foreground : props.theme.colors.third};
   border: 3px solid
     ${(props) =>
       props.isMinting
         ? props.theme.colors.foreground
-        : props.theme.colors.third};
-  padding: 0.1em 2em;
-  transition-property: background-color;
-  transition-property: color;
-  transition-duration: 0.25s;
+        : props.theme.colors.foreground};
+  padding: 0 2em;
   &:hover {
-    color: ${(props) => props.theme.colors.background};
+    color: ${(props) =>
+      props.isMinting
+        ? props.theme.colors.background
+        : props.theme.colors.third};
     background-color: ${(props) =>
       props.isMinting
         ? props.theme.colors.foreground
-        : props.theme.colors.third};
+        : props.theme.colors.background};
+    border: 3px solid
+      ${(props) =>
+        props.isMinting
+          ? props.theme.colors.foreground
+          : props.theme.colors.third};
   }
 `;
 

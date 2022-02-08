@@ -40,7 +40,7 @@ const GalleryItemDescription = styled(Body)`
   padding: 0 0.25em;
 `;
 
-export const Gallery = (items) => (
+export const Gallery = ({ items }) => (
   <GalleryContainer>
     {items.map((item) => (
       <GalleryItem key={item.name}>

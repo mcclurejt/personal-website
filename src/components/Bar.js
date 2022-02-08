@@ -25,10 +25,10 @@ export const BarItems = styled.div`
   padding: 0 0.5em;
 `;
 
-export const Bar = ({ name, left, right }) => (
+export const Bar = ({ center, left, right }) => (
   <BarContainer>
     {left}
-    <Title>{name}</Title>
+    <Title>{center}</Title>
     {right}
   </BarContainer>
 );
@@ -49,6 +49,10 @@ export const NavLink = styled(Link)`
     border: 2px solid ${(props) => props.theme.colors.second};
     color: ${(props) => props.theme.colors.second};
     cursor: default;
+  }
+  &:hover:not(.active) {
+    color: ${(props) => props.theme.colors.background};
+    background-color: ${(props) => props.theme.colors.foreground};
   }
 `;
 

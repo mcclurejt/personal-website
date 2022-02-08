@@ -1,6 +1,7 @@
 export const LightTheme = {
   body: {
-    family: '"Dongle", cursive',
+    family:
+      "'Dongle', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen','Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue'",
     size: {
       small: "1em",
       medium: "2em",
@@ -8,7 +9,8 @@ export const LightTheme = {
     },
   },
   header: {
-    family: '"Fredoka One", cursive',
+    family:
+      "'Fredoka One',-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen','Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue'",
     size: {
       small: "2.5em",
       medium: "4em",
